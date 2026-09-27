@@ -1,0 +1,3016 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+
+:root {
+  font-family: "Manrope", sans-serif;
+
+  --bg: #0d0f12;
+  --panel: #171a1f;
+  --panel-light: #1d2127;
+  --fretboard: #292d33;
+
+  --text: #f4f5f7;
+  --secondary: #9299a3;
+
+  --cyan: #22d3ee;
+  --coral: #ff4d6d;
+  --yellow: #ffd166;
+
+  --border: #2d323a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      circle at 50% -20%,
+      rgba(34, 211, 238, 0.08),
+      transparent 36%
+    ),
+    var(--bg);
+
+  color: var(--text);
+}
+
+button {
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+.app {
+  width: min(100%, 900px);
+  min-height: 100vh;
+  margin: 0 auto;
+
+  padding:
+    max(20px, env(safe-area-inset-top))
+    16px
+    max(40px, env(safe-area-inset-bottom));
+}
+
+/* TOP BAR */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 38px;
+}
+
+.logo {
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.logo > span {
+  color: var(--cyan);
+}
+
+.logo small {
+  display: block;
+
+  margin-top: 6px;
+
+  color: var(--secondary);
+
+  font-size: 8px;
+  letter-spacing: 0.26em;
+}
+
+.version {
+  padding: 7px 10px;
+
+  border: 1px solid var(--border);
+  border-radius: 100px;
+
+  color: var(--secondary);
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* HERO */
+
+.hero {
+  margin-bottom: 38px;
+}
+
+.eyebrow {
+  margin-bottom: 12px;
+
+  color: var(--cyan);
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.hero h1 {
+  margin: 0;
+
+  font-size: clamp(38px, 11vw, 70px);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.hero h1 span {
+  color: #b7bdc6;
+}
+
+.intro {
+  max-width: 580px;
+
+  margin: 18px 0 24px;
+
+  color: var(--secondary);
+
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+/* MINI FRETBOARD */
+
+.fretboardPreview {
+  display: block;
+
+  width: 100%;
+
+  padding: 14px;
+
+  overflow: hidden;
+
+  border: 1px solid var(--border);
+  border-radius: 18px;
+
+  background: var(--panel);
+
+  color: var(--text);
+
+  text-align: left;
+
+  cursor: pointer;
+
+  appearance: none;
+}
+
+.fretboardPreview:active {
+  transform: scale(0.995);
+}
+
+.previewTop {
+  display: flex;
+  justify-content: space-between;
+
+  margin-bottom: 12px;
+
+  color: var(--secondary);
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+}
+
+.touchLabel {
+  color: var(--cyan);
+}
+
+.miniFretboard {
+  position: relative;
+
+  height: 130px;
+
+  overflow: hidden;
+
+  border: 1px solid #3a4048;
+  border-radius: 11px;
+
+  background: var(--fretboard);
+}
+
+.strings,
+.frets {
+  position: absolute;
+  inset: 0;
+}
+
+.strings {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+
+  padding: 8px 0;
+}
+
+.strings span {
+  display: block;
+
+  width: 100%;
+  height: 1px;
+
+  background: rgba(184, 189, 197, 0.72);
+}
+
+.frets {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+}
+
+.frets span {
+  border-right: 1px solid rgba(116, 123, 132, 0.62);
+}
+
+.previewNote {
+  --x: calc((var(--fret) + 0.5) * 12.5%);
+  --y: calc((var(--string) + 0.5) * 16.666%);
+
+  position: absolute;
+
+  left: var(--x);
+  top: var(--y);
+
+  width: 23px;
+  height: 23px;
+
+  border-radius: 50%;
+
+  background: var(--cyan);
+
+  opacity: 0;
+
+  transform: translate(-50%, -50%) scale(0.4);
+
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.35);
+}
+
+.previewNote.root {
+  background: var(--coral);
+
+  box-shadow: 0 0 18px rgba(255, 77, 109, 0.38);
+}
+
+.playing .previewNote {
+  animation: noteOn 0.38s var(--delay) forwards;
+}
+
+@keyframes noteOn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.18);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.previewClaim {
+  margin-top: 13px;
+
+  color: #dce0e5;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* STUDY */
+
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 12px;
+}
+
+.sectionHeading span {
+  color: var(--secondary);
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.sectionHeading small {
+  color: #606771;
+
+  font-size: 9px;
+}
+
+.studyGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+
+  gap: 10px;
+}
+
+.studyCard {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  min-height: 145px;
+
+  padding: 16px;
+
+  border: 1px solid var(--border);
+  border-radius: 17px;
+
+  background: var(--panel);
+
+  color: var(--text);
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.studyCard:active {
+  background: var(--panel-light);
+  transform: scale(0.98);
+}
+
+.cardSymbol {
+  color: var(--cyan);
+
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.trainingCard .cardSymbol {
+  color: var(--yellow);
+}
+
+.studyCard h2 {
+  margin: 0 0 5px;
+
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+.studyCard p {
+  margin: 0;
+
+  color: var(--secondary);
+
+  font-size: 11px;
+}
+
+.cardArrow {
+  position: absolute;
+
+  top: 15px;
+  right: 15px;
+
+  color: #59616b;
+
+  font-size: 15px;
+}
+
+/* NOTATION */
+
+.notationPanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  margin-top: 22px;
+  padding: 13px 14px;
+
+  border: 1px solid #252a31;
+  border-radius: 15px;
+
+  background: rgba(23, 26, 31, 0.55);
+}
+
+.notationPanel strong {
+  display: block;
+
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.notationPanel small {
+  display: block;
+
+  margin-top: 3px;
+
+  color: var(--secondary);
+
+  font-size: 9px;
+}
+
+.notationSwitch {
+  display: flex;
+
+  padding: 3px;
+
+  border-radius: 10px;
+
+  background: #0b0d10;
+}
+
+.notationSwitch button {
+  padding: 8px 9px;
+
+  border: 0;
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: var(--secondary);
+
+  font-size: 9px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.notationSwitch button.active {
+  background: #282d34;
+  color: var(--text);
+}
+
+/* TABLET / DESKTOP */
+
+@media (min-width: 700px) {
+  .app {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+
+  .studyGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .studyCard {
+    min-height: 165px;
+  }
+
+  .miniFretboard {
+    height: 155px;
+  }
+}
+
+/* VERY SMALL PHONES */
+
+@media (max-width: 350px) {
+  .app {
+    padding-left: 11px;
+    padding-right: 11px;
+  }
+
+  .studyCard {
+    min-height: 132px;
+    padding: 13px;
+  }
+
+  .hero h1 {
+    font-size: 35px;
+  }
+}
+/* =========================
+   TRAINING
+   ========================= */
+
+.trainingScreen {
+  padding-bottom: 20px;
+}
+
+.trainingTopbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 34px;
+}
+
+.backButton {
+  padding: 8px 0;
+
+  border: 0;
+  background: transparent;
+
+  color: #9299a3;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.trainingNumber {
+  padding: 7px 10px;
+
+  border: 1px solid #3d3929;
+  border-radius: 100px;
+
+  color: #ffd166;
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.trainingHero h1 {
+  margin: 0 0 10px;
+
+  color: #f4f5f7;
+
+  font-size: clamp(38px, 11vw, 62px);
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.trainingHero p {
+  max-width: 500px;
+
+  margin: 0 0 30px;
+
+  color: #9299a3;
+
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.trainingEyebrow {
+  color: #ffd166;
+}
+
+.trainingLabel {
+  margin: 22px 0 9px;
+
+  color: #777e88;
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+/* NOTE */
+
+.noteSelector {
+  display: flex;
+
+  gap: 7px;
+
+  overflow-x: auto;
+
+  padding: 2px 0 6px;
+
+  scrollbar-width: none;
+}
+
+.noteSelector::-webkit-scrollbar {
+  display: none;
+}
+
+.noteSelector button {
+  flex: 0 0 auto;
+
+  min-width: 48px;
+
+  padding: 11px 12px;
+
+  border: 1px solid #343a43;
+  border-radius: 11px;
+
+  background: #15191e;
+  color: #f4f5f7;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.noteSelector button.active {
+  border-color: #ffd166;
+
+  background: #ffd166;
+  color: #111317;
+}
+
+/* RANGE */
+
+.rangeSelector {
+  display: flex;
+
+  gap: 6px;
+
+  overflow-x: auto;
+
+  padding-bottom: 5px;
+
+  scrollbar-width: none;
+}
+
+.rangeSelector::-webkit-scrollbar {
+  display: none;
+}
+
+.rangeSelector button {
+  flex: 0 0 auto;
+
+  padding: 9px 12px;
+
+  border: 1px solid #30363e;
+  border-radius: 10px;
+
+  background: #15191e;
+  color: #9299a3;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.rangeSelector button.active {
+  border-color: #676e77;
+
+  background: #292e35;
+  color: #f4f5f7;
+}
+
+/* MISSION */
+
+.mission {
+  display: flex;
+  flex-direction: column;
+
+  margin: 22px 0 12px;
+}
+
+.mission > span {
+  margin-bottom: 4px;
+
+  color: #ffd166;
+
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.mission strong {
+  color: #f4f5f7;
+
+  font-size: 18px;
+}
+
+.mission small {
+  margin-top: 3px;
+
+  color: #9299a3;
+
+  font-size: 10px;
+}
+
+/* FRETBOARD */
+
+.fretboardScroll {
+  width: 100%;
+
+  overflow-x: auto;
+
+  padding-bottom: 7px;
+
+  scrollbar-width: thin;
+}
+
+.trainingFretboard {
+  display: flex;
+
+  min-width: max(
+    100%,
+    calc(var(--fret-count) * 70px + 42px)
+  );
+
+  overflow: hidden;
+
+  border: 1px solid #414750;
+  border-radius: 14px;
+
+  background: #292d33;
+}
+
+.stringNames {
+  z-index: 3;
+
+  display: grid;
+  grid-template-rows: repeat(6, 48px);
+
+  width: 42px;
+  flex: 0 0 42px;
+
+  border-right: 2px solid #b8bdc5;
+
+  background: #20242a;
+}
+
+.stringNames span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #f4f5f7;
+
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.fretArea {
+  position: relative;
+
+  flex: 1;
+}
+
+.guitarString {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      var(--fret-count),
+      minmax(70px, 1fr)
+    );
+
+  height: 48px;
+
+  background:
+    linear-gradient(
+      to bottom,
+      transparent calc(50% - 0.5px),
+      rgba(184, 189, 197, 0.7)
+        calc(50% - 0.5px),
+      rgba(184, 189, 197, 0.7)
+        calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    );
+}
+
+.fretPosition {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 0;
+  border-right: 1px solid
+    rgba(116, 123, 132, 0.65);
+
+  background: transparent;
+
+  cursor: pointer;
+}
+
+.fretPosition span {
+  width: 28px;
+  height: 28px;
+
+  border-radius: 50%;
+
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
+}
+
+.fretPosition:active span {
+  transform: scale(0.82);
+}
+
+/* USER ANSWER */
+
+.fretPosition.selected span {
+  background: #ffd166;
+
+  box-shadow:
+    0 0 16px
+    rgba(255, 209, 102, 0.4);
+}
+
+/* CORRECT */
+
+.fretPosition.correct span {
+  background: #22d3ee;
+
+  box-shadow:
+    0 0 16px
+    rgba(34, 211, 238, 0.4);
+}
+
+/* WRONG */
+
+.fretPosition.wrong span {
+  border: 2px solid #ff6b6b;
+
+  background: transparent;
+}
+
+/* SOLUTION */
+
+.fretPosition.solution span {
+  border: 2px solid #d9faff;
+
+  background: rgba(
+    34,
+    211,
+    238,
+    0.65
+  );
+}
+
+.fretNumbers {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      var(--fret-count),
+      minmax(70px, 1fr)
+    );
+
+  height: 24px;
+}
+
+.fretNumbers span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #7e858e;
+
+  font-size: 8px;
+  font-weight: 700;
+}
+
+/* ACTIONS */
+
+.trainingActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  gap: 8px;
+
+  margin-top: 12px;
+}
+
+.trainingActions button {
+  min-height: 44px;
+
+  border-radius: 11px;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.secondaryAction {
+  border: 1px solid #343a43;
+
+  background: #171a1f;
+  color: #f4f5f7;
+}
+
+.verifyButton {
+  grid-column: 1 / -1;
+
+  border: 1px solid #ffd166;
+
+  background: #ffd166;
+  color: #111317;
+}
+
+.feedbackPanel {
+  min-height: 48px;
+
+  margin-top: 10px;
+  padding: 12px 13px;
+
+  border: 1px solid #252a31;
+  border-radius: 11px;
+
+  background: #12151a;
+
+  color: #9299a3;
+
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.feedbackPanel b {
+  color: #ffd166;
+}
+
+.feedbackPanel strong {
+  color: #f4f5f7;
+}
+
+.successText {
+  color: #22d3ee !important;
+}
+
+/* MOBILE */
+
+@media (max-width: 500px) {
+  .trainingFretboard {
+    /*
+      Manteniamo i tasti abbastanza
+      grandi da essere toccati.
+      Il manico scorre orizzontalmente.
+    */
+    min-width: calc(
+      var(--fret-count) * 68px + 42px
+    );
+  }
+
+  .guitarString {
+    grid-template-columns:
+      repeat(
+        var(--fret-count),
+        68px
+      );
+  }
+
+  .fretNumbers {
+    grid-template-columns:
+      repeat(
+        var(--fret-count),
+        68px
+      );
+  }
+}
+/* =========================
+   NOTES
+   ========================= */
+
+.moduleNumber {
+  padding: 7px 11px;
+  border: 1px solid #284047;
+  border-radius: 100px;
+
+  color: #22d3ee;
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.modeSelector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 5px;
+
+  margin: 24px 0 18px;
+  padding: 4px;
+
+  border-radius: 12px;
+
+  background: #101318;
+}
+
+.modeSelector button {
+  padding: 10px 8px;
+
+  border: 0;
+  border-radius: 9px;
+
+  background: transparent;
+  color: #9299a3;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.modeSelector button.active {
+  background: #292e35;
+  color: #f4f5f7;
+}
+
+.studyNoteSelector button.active {
+  border-color: #22d3ee;
+  background: #22d3ee;
+  color: #0d0f12;
+}
+
+.notesInfo {
+  display: flex;
+  flex-direction: column;
+
+  margin: 23px 0 11px;
+}
+
+.notesInfo span {
+  margin-bottom: 3px;
+
+  color: #22d3ee;
+
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.notesInfo strong {
+  color: #f4f5f7;
+
+  font-size: 18px;
+}
+
+.fretPosition.studyNote span,
+.fretPosition.freeNote span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #22d3ee;
+
+  color: #0d0f12;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  box-shadow:
+    0 0 15px
+    rgba(34, 211, 238, 0.34);
+}
+
+.freeHint {
+  margin-top: 11px;
+  padding: 12px 13px;
+
+  border: 1px solid #252a31;
+  border-radius: 11px;
+
+  background: #12151a;
+  color: #9299a3;
+
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+/* riferimento dell'ottava */
+
+.fretNumbers .octaveFret {
+  position: relative;
+
+  color: #f4f5f7;
+
+  font-weight: 800;
+}
+
+.fretNumbers .octaveFret::before,
+.fretNumbers .octaveFret::after {
+  content: "";
+
+  position: absolute;
+  top: 2px;
+
+  width: 3px;
+  height: 3px;
+
+  border-radius: 50%;
+
+  background: #9299a3;
+}
+
+.fretNumbers .octaveFret::before {
+  left: calc(50% - 8px);
+}
+
+.fretNumbers .octaveFret::after {
+  left: calc(50% + 5px);
+}
+/* =========================
+   SCALES
+   ========================= */
+
+.scaleRootSelector button.active {
+  border-color: #ff4d6d;
+  background: #ff4d6d;
+  color: #0d0f12;
+}
+
+.scaleSelect {
+  width: 100%;
+  min-height: 46px;
+
+  padding: 0 13px;
+
+  border: 1px solid #343a43;
+  border-radius: 11px;
+
+  outline: none;
+
+  background: #171a1f;
+  color: #f4f5f7;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.scaleIdentity {
+  display: flex;
+  flex-direction: column;
+
+  margin: 22px 0;
+  padding: 15px;
+
+  border: 1px solid #292e35;
+  border-radius: 13px;
+
+  background: #12151a;
+}
+
+.scaleIdentity > span {
+  margin-bottom: 4px;
+
+  color: #9299a3;
+
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.scaleIdentity > strong {
+  color: #f4f5f7;
+
+  font-size: 20px;
+}
+
+.scaleFormula {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 6px;
+
+  margin-top: 13px;
+}
+
+.scaleFormula span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 30px;
+  height: 30px;
+
+  padding: 0 8px;
+
+  border: 1px solid #31525a;
+  border-radius: 100px;
+
+  color: #22d3ee;
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.scaleFormula .rootInterval {
+  border-color: #ff4d6d;
+
+  color: #ff4d6d;
+}
+
+.scaleViewSelector {
+  grid-template-columns: 1fr 1fr;
+}
+
+.cagedSelector {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+
+  gap: 6px;
+}
+
+.cagedSelector button {
+  min-height: 44px;
+
+  border: 1px solid #343a43;
+  border-radius: 10px;
+
+  background: #171a1f;
+  color: #9299a3;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.cagedSelector button.active {
+  border-color: #22d3ee;
+
+  background: rgba(34, 211, 238, 0.1);
+  color: #22d3ee;
+}
+
+.cagedPreparing {
+  display: flex;
+  flex-direction: column;
+
+  margin-top: 9px;
+  padding: 13px;
+
+  border: 1px solid #273139;
+  border-radius: 11px;
+
+  background: #12161a;
+}
+
+.cagedPreparing span {
+  color: #22d3ee;
+
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.cagedPreparing strong {
+  margin-top: 3px;
+
+  color: #f4f5f7;
+
+  font-size: 13px;
+}
+
+.cagedPreparing p {
+  margin: 5px 0 0;
+
+  color: #9299a3;
+
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.scaleLegend {
+  display: flex;
+
+  gap: 16px;
+
+  margin: 20px 0 9px;
+}
+
+.scaleLegend span {
+  display: flex;
+  align-items: center;
+
+  gap: 6px;
+
+  color: #9299a3;
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.scaleLegend i {
+  display: block;
+
+  width: 9px;
+  height: 9px;
+
+  border-radius: 50%;
+}
+
+.legendRoot {
+  background: #ff4d6d;
+}
+
+.legendScale {
+  background: #22d3ee;
+}
+
+/* note della scala */
+
+.fretPosition.scaleNote span,
+.fretPosition.scaleRoot span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 30px;
+  height: 30px;
+
+  padding: 0 4px;
+
+  border-radius: 50%;
+
+  font-size: 7px;
+  font-weight: 800;
+}
+
+.fretPosition.scaleNote span {
+  background: #22d3ee;
+  color: #071316;
+
+  box-shadow:
+    0 0 14px
+    rgba(34, 211, 238, 0.28);
+}
+
+.fretPosition.scaleRoot span {
+  background: #ff4d6d;
+  color: #16070b;
+
+  box-shadow:
+    0 0 16px
+    rgba(255, 77, 109, 0.35);
+}
+
+/* ENTRAMBI necessita più spazio */
+
+.fretPosition.scaleNote span:not(:empty),
+.fretPosition.scaleRoot span:not(:empty) {
+  white-space: nowrap;
+}
+/* =========================
+   CAGED
+   ========================= */
+
+.cagedInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-top: 9px;
+  padding: 11px 13px;
+
+  border: 1px solid #273139;
+  border-radius: 11px;
+
+  background: #12161a;
+}
+
+.cagedInfo div {
+  display: flex;
+  align-items: baseline;
+
+  gap: 7px;
+}
+
+.cagedInfo span {
+  color: #9299a3;
+
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.cagedInfo strong {
+  color: #22d3ee;
+
+  font-size: 18px;
+}
+
+.cagedInfo small {
+  color: #9299a3;
+
+  font-size: 9px;
+}
+
+/* CONTINUITÀ */
+
+.continuitySwitch {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  margin-top: 8px;
+  padding: 11px 13px;
+
+  border: 1px solid #252b31;
+  border-radius: 11px;
+
+  background: #15191e;
+
+  cursor: pointer;
+}
+
+.continuitySwitch input {
+  position: absolute;
+
+  opacity: 0;
+  pointer-events: none;
+}
+
+.continuitySwitch > span {
+  position: relative;
+
+  width: 36px;
+  height: 20px;
+
+  flex: 0 0 36px;
+
+  border-radius: 20px;
+
+  background: #343a43;
+
+  transition: 0.2s ease;
+}
+
+.continuitySwitch > span::after {
+  content: "";
+
+  position: absolute;
+
+  top: 3px;
+  left: 3px;
+
+  width: 14px;
+  height: 14px;
+
+  border-radius: 50%;
+
+  background: #9299a3;
+
+  transition: 0.2s ease;
+}
+
+.continuitySwitch
+  input:checked
+  + span {
+  background:
+    rgba(34, 211, 238, 0.25);
+}
+
+.continuitySwitch
+  input:checked
+  + span::after {
+  left: 19px;
+
+  background: #22d3ee;
+}
+
+.continuitySwitch div {
+  display: flex;
+  flex-direction: column;
+}
+
+.continuitySwitch strong {
+  color: #f4f5f7;
+
+  font-size: 9px;
+}
+
+.continuitySwitch small {
+  margin-top: 1px;
+
+  color: #9299a3;
+
+  font-size: 8px;
+}
+
+/* BOX BACKGROUND */
+
+.cagedBoxBackground {
+  position: absolute;
+
+  z-index: 0;
+
+  top: 0;
+  bottom: 24px;
+
+  left:
+    calc(
+      var(--box-start) *
+      (100% / var(--fret-count))
+    );
+
+  width:
+    calc(
+      var(--box-width) *
+      (100% / var(--fret-count))
+    );
+
+  border-left:
+    1px solid
+    rgba(34, 211, 238, 0.4);
+
+  border-right:
+    1px solid
+    rgba(34, 211, 238, 0.4);
+
+  background:
+    rgba(34, 211, 238, 0.035);
+
+  pointer-events: none;
+}
+
+.guitarString,
+.fretNumbers {
+  position: relative;
+  z-index: 1;
+}
+
+/* CONTINUITÀ */
+
+.fretPosition.scaleGhost span,
+.fretPosition.scaleRootGhost span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 26px;
+  height: 26px;
+
+  padding: 0 3px;
+
+  border-radius: 50%;
+
+  font-size: 7px;
+  font-weight: 800;
+
+  opacity: 0.28;
+}
+
+.fretPosition.scaleGhost span {
+  border:
+    1px solid #22d3ee;
+
+  color: #22d3ee;
+
+  background:
+    rgba(34, 211, 238, 0.05);
+}
+
+.fretPosition.scaleRootGhost span {
+  border:
+    1px solid #ff4d6d;
+
+  color: #ff4d6d;
+
+  background:
+    rgba(255, 77, 109, 0.05);
+}
+
+.legendGhost {
+  border:
+    1px solid #22d3ee;
+
+  background: transparent !important;
+
+  opacity: 0.4;
+}
+/* =========================================
+   DEBUG / FIX VISIBILITÀ NOTE SCALE
+   ========================================= */
+
+.fretPosition.scaleNote span,
+.fretPosition.scaleRoot span,
+.fretPosition.scaleGhost span,
+.fretPosition.scaleRootGhost span {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+
+  position: relative;
+  z-index: 20;
+
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+
+  padding: 0;
+
+  border-radius: 50%;
+
+  opacity: 1;
+
+  visibility: visible !important;
+
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+
+  pointer-events: none;
+}
+
+/* NOTA DELLA SCALA */
+
+.fretPosition.scaleNote span {
+  background: #22d3ee !important;
+  color: #071316 !important;
+
+  border: 2px solid #22d3ee !important;
+}
+
+/* TONICA */
+
+.fretPosition.scaleRoot span {
+  background: #ff4d6d !important;
+  color: #ffffff !important;
+
+  border: 2px solid #ff4d6d !important;
+}
+
+/* NOTE FUORI DAL BOX */
+
+.fretPosition.scaleGhost span {
+  background: rgba(34, 211, 238, 0.12) !important;
+  color: #22d3ee !important;
+
+  border: 1px solid #22d3ee !important;
+
+  opacity: 0.38;
+}
+
+/* TONICA FUORI DAL BOX */
+
+.fretPosition.scaleRootGhost span {
+  background: rgba(255, 77, 109, 0.12) !important;
+  color: #ff4d6d !important;
+
+  border: 1px solid #ff4d6d !important;
+
+  opacity: 0.45;
+}
+
+/* Manteniamo le corde dietro alle note */
+
+.guitarString {
+  position: relative;
+  z-index: 5;
+}
+
+.fretPosition {
+  position: relative;
+  overflow: visible !important;
+}
+
+.fretPosition span {
+  position: relative;
+}
+/* =========================================
+   SCALE MARKERS - VERSIONE ROBUSTA
+   ========================================= */
+
+.fretPosition .noteMarker {
+  position: absolute !important;
+
+  top: 50% !important;
+  left: 50% !important;
+
+  transform:
+    translate(-50%, -50%) !important;
+
+  z-index: 50 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+
+  padding: 0 3px !important;
+
+  border-radius: 50% !important;
+
+  visibility: visible !important;
+
+  font-size: 8px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+
+  white-space: nowrap;
+
+  pointer-events: none;
+}
+
+
+/* NOTA SCALA */
+
+.fretPosition .noteMarker.scaleNote {
+  background: #22d3ee !important;
+  color: #071316 !important;
+
+  border:
+    2px solid #22d3ee !important;
+
+  opacity: 1 !important;
+}
+
+
+/* TONICA */
+
+.fretPosition .noteMarker.scaleRoot {
+  background: #ff4d6d !important;
+  color: #ffffff !important;
+
+  border:
+    2px solid #ff4d6d !important;
+
+  opacity: 1 !important;
+}
+
+
+/* CONTINUITÀ */
+
+.fretPosition .noteMarker.scaleGhost {
+  background:
+    rgba(
+      34,
+      211,
+      238,
+      0.08
+    ) !important;
+
+  color: #22d3ee !important;
+
+  border:
+    1px solid #22d3ee !important;
+
+  opacity: 0.32 !important;
+}
+
+
+/* TONICA FUORI BOX */
+
+.fretPosition
+.noteMarker.scaleRootGhost {
+  background:
+    rgba(
+      255,
+      77,
+      109,
+      0.08
+    ) !important;
+
+  color: #ff4d6d !important;
+
+  border:
+    1px solid #ff4d6d !important;
+
+  opacity: 0.4 !important;
+}
+
+
+/* IMPORTANTISSIMO:
+   consente ai marker di uscire
+   dal button */
+
+.fretPosition {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+.guitarString {
+  overflow: visible !important;
+}
+/* =========================================
+   CAGED - FORMA ACCORDO
+   ========================================= */
+
+.fretPosition .noteMarker.chordTone {
+  outline: 2px solid #f4f5f7 !important;
+  outline-offset: 3px;
+
+  box-shadow:
+    0 0 0 1px
+    rgba(244, 245, 247, 0.18),
+    0 0 12px
+    rgba(244, 245, 247, 0.12);
+}
+
+/* Simbolo legenda accordo */
+
+.legendChord {
+  background: transparent !important;
+  border: 2px solid #f4f5f7;
+}
+/* =========================================
+   RIPETIZIONE DEL BOX CAGED
+   ========================================= */
+
+/*
+  BOX ATTIVO:
+  rimane pieno come adesso.
+
+  RIPETIZIONE:
+  interno scuro + bordo colorato.
+
+  CONTINUITÀ:
+  rimane il ghost trasparente attuale.
+*/
+
+.fretPosition .noteMarker.scaleRepeat {
+  background: #0d0f12 !important;
+  color: #22d3ee !important;
+  border: 2px solid #22d3ee !important;
+  opacity: 0.82 !important;
+}
+
+
+.fretPosition .noteMarker.scaleRootRepeat {
+  background: #0d0f12 !important;
+  color: #ff4d6d !important;
+  border: 2px solid #ff4d6d !important;
+  opacity: 0.9 !important;
+}
+
+
+/*
+  Continuità più discreta della
+  ripetizione del pattern.
+*/
+
+.fretPosition .noteMarker.scaleGhost {
+  background: rgba(
+    34,
+    211,
+    238,
+    0.08
+  ) !important;
+
+  color: #22d3ee !important;
+
+  border:
+    1px solid
+    rgba(
+      34,
+      211,
+      238,
+      0.35
+    ) !important;
+
+  opacity: 0.3 !important;
+}
+
+
+.fretPosition .noteMarker.scaleRootGhost {
+  background: rgba(
+    255,
+    77,
+    109,
+    0.08
+  ) !important;
+
+  color: #ff4d6d !important;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      77,
+      109,
+      0.4
+    ) !important;
+
+  opacity: 0.38 !important;
+}
+
+/* =========================================
+   ACCORDI
+   ========================================= */
+
+.chordConstruction {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(70px, 1fr)
+    );
+
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.chordConstructionTone {
+  min-height: 82px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 5px;
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.12);
+
+  border-radius: 14px;
+
+  background:
+    rgba(255, 255, 255, 0.04);
+}
+
+.chordConstructionTone strong {
+  color: #ffffff;
+  font-size: 18px;
+}
+
+.chordDegree {
+  color: #22d3ee;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+}
+
+.chordConstructionTone:first-child {
+  border-color:
+    rgba(255, 77, 109, 0.7);
+}
+
+.chordConstructionTone:first-child
+.chordDegree {
+  color: #ff4d6d;
+}
+
+.chordFormulaText {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding: 14px 16px;
+
+  border-radius: 12px;
+
+  background:
+    rgba(255, 255, 255, 0.04);
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.08);
+}
+
+.chordFormulaText span {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  opacity: 0.55;
+}
+
+.chordFormulaText strong {
+  color: #ffffff;
+  font-size: 14px;
+}
+/* =========================================
+   FRETBOARD - MODULO ACCORDI
+   ========================================= */
+
+.fretPosition .noteMarker.fretChordNote {
+  background: #343a46;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.fretPosition .noteMarker.fretChordRoot {
+  background: #ff4d6d;
+  color: #ffffff;
+  border: 1px solid #ff4d6d;
+  font-weight: 800;
+}
+
+
+/* LEGENDA ACCORDI */
+
+.legendChordRoot {
+  background: #ff4d6d;
+  border: 1px solid #ff4d6d;
+}
+
+.legendChordNote {
+  background: #343a46;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+/* =========================================
+   ACCORDI - DIAGRAMMA FORMA COMPATTO
+   ========================================= */
+
+.chordShapeFretboard {
+  width: 100%;
+  max-width: 460px;
+}
+
+.chordShapeFretboard .fretboardScroll {
+  width: 100%;
+  overflow-x: visible;
+}
+
+.chordShapeFretboard .trainingFretboard {
+  width: 100%;
+  min-width: 0;
+}
+
+/*
+  IMPORTANTE:
+  non modifichiamo guitarString.
+  La distribuzione verticale resta quella
+  originale del Fretboard.
+*/
+
+.chordShapeFretboard .fretArea {
+  min-height: 0;
+}
+/* =========================================
+   MARKER FORME ACCORDO
+   Sempre perfettamente circolari
+   ========================================= */
+
+.chordShapeFretboard .fretPosition .noteMarker {
+  width: 38px !important;
+  height: 38px !important;
+
+  min-width: 38px !important;
+  min-height: 38px !important;
+
+  max-width: 38px !important;
+  max-height: 38px !important;
+
+  aspect-ratio: 1 / 1;
+
+  flex: 0 0 38px;
+
+  padding: 0 !important;
+  margin: 0;
+
+  border-radius: 50% !important;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  line-height: 1;
+  white-space: nowrap;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  box-sizing: border-box;
+}
+/* =========================================
+   FORME ACCORDO
+   Tutte le note hanno lo stesso peso visivo
+   ========================================= */
+
+.chordShapeFretboard .noteMarker.fretChordRoot,
+.chordShapeFretboard .noteMarker.fretChordNote {
+  background: #ff4d6d !important;
+  color: #ffffff !important;
+  border-color: #ff4d6d !important;
+}
+/* =========================================
+   HOME - STRUMENTI
+   ========================================= */
+
+.tools {
+  margin-top: 28px;
+}
+
+
+/* CARD STRUMENTO */
+
+.toolCard {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  width: 100%;
+  min-height: 96px;
+
+  gap: 16px;
+
+  padding: 17px 18px;
+
+  border: 1px solid
+    rgba(255, 209, 102, 0.38);
+
+  border-radius: 17px;
+
+  background:
+    linear-gradient(
+      110deg,
+      rgba(255, 209, 102, 0.13),
+      rgba(255, 209, 102, 0.035)
+    ),
+    var(--panel);
+
+  color: var(--text);
+
+  text-align: left;
+
+  cursor: pointer;
+
+  overflow: hidden;
+
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+
+/* LEGGERO BAGLIORE */
+
+.toolCard::before {
+  content: "";
+
+  position: absolute;
+
+  width: 120px;
+  height: 120px;
+
+  left: -45px;
+  top: -55px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(255, 209, 102, 0.08);
+
+  filter: blur(15px);
+
+  pointer-events: none;
+}
+
+
+/* INTERAZIONE */
+
+.toolCard:active {
+  transform: scale(0.985);
+
+  border-color:
+    rgba(255, 209, 102, 0.7);
+}
+
+
+/* ICONA */
+
+.toolSymbol {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 52px;
+  height: 52px;
+
+  flex: 0 0 52px;
+
+  border: 1px solid
+    rgba(255, 209, 102, 0.32);
+
+  border-radius: 14px;
+
+  background:
+    rgba(255, 209, 102, 0.1);
+
+  color: var(--yellow);
+
+  font-size: 25px;
+  font-weight: 800;
+}
+
+
+/* TESTI */
+
+.toolInfo {
+  position: relative;
+  z-index: 1;
+
+  flex: 1;
+}
+
+.toolInfo h2 {
+  margin: 0 0 5px;
+
+  color: var(--text);
+
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+.toolInfo p {
+  margin: 0;
+
+  color: var(--secondary);
+
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+
+/* FRECCIA */
+
+.toolCard .cardArrow {
+  position: static;
+
+  margin-left: auto;
+
+  color: var(--yellow);
+
+  font-size: 18px;
+
+  opacity: 0.7;
+}
+
+
+/* =========================================
+   DESKTOP
+   ========================================= */
+
+@media (min-width: 700px) {
+
+  .tools {
+    margin-top: 32px;
+  }
+
+  .toolCard {
+    min-height: 105px;
+
+    padding: 19px 21px;
+  }
+
+  .toolSymbol {
+    width: 58px;
+    height: 58px;
+
+    flex-basis: 58px;
+
+    font-size: 28px;
+  }
+
+}
+
+
+/* =========================================
+   MOBILE PICCOLO
+   ========================================= */
+
+@media (max-width: 400px) {
+
+  .toolCard {
+    gap: 12px;
+
+    padding: 15px;
+
+    min-height: 90px;
+  }
+
+  .toolSymbol {
+    width: 46px;
+    height: 46px;
+
+    flex-basis: 46px;
+
+    font-size: 22px;
+  }
+
+  .toolInfo h2 {
+    font-size: 14px;
+  }
+
+  .toolInfo p {
+    font-size: 10px;
+  }
+
+}/* ICONA ONDA ACCORDATORE */
+
+.tunerWave svg {
+  width: 32px;
+  height: 22px;
+
+  overflow: visible;
+}
+
+.tunerWave path {
+  fill: none;
+
+  stroke: var(--yellow);
+  stroke-width: 2.5;
+
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* =========================================
+   TUNER
+   ========================================= */
+
+.tunerScreen {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding-bottom: 30px;
+}
+
+
+/* =========================================
+   HEADER / HERO
+   ========================================= */
+
+.tunerScreen .trainingTopbar {
+  margin-bottom: 28px;
+}
+
+.tunerScreen .trainingHero {
+  text-align: center;
+}
+
+.tunerScreen .trainingEyebrow {
+  color: var(--yellow);
+}
+
+.tunerScreen .trainingHero h1 {
+  margin-top: 8px;
+}
+
+.tunerScreen .trainingHero p {
+  max-width: 390px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+/* =========================================
+   AREA PRINCIPALE
+   ========================================= */
+
+.tunerMain {
+  margin-top: 34px;
+  text-align: center;
+}
+
+
+/* =========================================
+   NOTA
+   ========================================= */
+
+.tunerNote {
+  min-height: 110px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: var(--yellow);
+
+  font-size: clamp(72px, 18vw, 112px);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -0.06em;
+
+  text-shadow:
+    0 0 26px rgba(255, 209, 102, 0.12);
+
+  transition:
+    color 0.2s ease,
+    text-shadow 0.2s ease;
+}
+
+.tunerNote.tuned {
+  color: var(--cyan);
+
+  text-shadow:
+    0 0 30px rgba(34, 211, 238, 0.24);
+}
+
+.tunerNote.idle {
+  color: var(--muted);
+  opacity: 0.28;
+  text-shadow: none;
+}
+
+
+/* =========================================
+   CORDA RICONOSCIUTA
+   ========================================= */
+
+.tunerDetectedString {
+  min-height: 18px;
+
+  margin-top: 8px;
+
+  color: var(--secondary);
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 0.12em;
+}
+
+
+/* =========================================
+   MISURATORE CENT
+   ========================================= */
+
+.tunerMeter {
+  margin-top: 36px;
+}
+
+.tunerMeterLabels {
+  display: grid;
+
+  grid-template-columns:
+    repeat(5, 1fr);
+
+  align-items: center;
+
+  color: var(--muted);
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.tunerMeterLabels span:nth-child(1) {
+  text-align: left;
+}
+
+.tunerMeterLabels span:nth-child(2),
+.tunerMeterLabels span:nth-child(3),
+.tunerMeterLabels span:nth-child(4) {
+  text-align: center;
+}
+
+.tunerMeterLabels span:nth-child(5) {
+  text-align: right;
+}
+
+
+/* BINARIO */
+
+.tunerTrack {
+  position: relative;
+
+  height: 42px;
+
+  margin-top: 2px;
+}
+
+
+/* linea principale */
+
+.tunerTrackLine {
+  position: absolute;
+
+  left: 0;
+  right: 0;
+
+  top: 20px;
+
+  height: 2px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--border),
+      #555d68,
+      var(--border)
+    );
+
+  border-radius: 20px;
+}
+
+
+/* tacche */
+
+.tunerTick {
+  position: absolute;
+
+  top: 12px;
+
+  width: 1px;
+  height: 18px;
+
+  background: #5e6670;
+
+  transform:
+    translateX(-50%);
+}
+
+.tunerTick.tickMinus50 {
+  left: 0;
+}
+
+.tunerTick.tickMinus25 {
+  left: 25%;
+}
+
+.tunerTick.tickZero {
+  left: 50%;
+
+  width: 2px;
+  height: 24px;
+
+  top: 9px;
+
+  background: var(--secondary);
+}
+
+.tunerTick.tickPlus25 {
+  left: 75%;
+}
+
+.tunerTick.tickPlus50 {
+  left: 100%;
+}
+
+
+/* =========================================
+   ZONA CENTRALE
+   ========================================= */
+
+.tunerSweetSpot {
+  position: absolute;
+
+  left: 46%;
+  top: 15px;
+
+  width: 8%;
+  height: 12px;
+
+  border-radius: 20px;
+
+  background:
+    rgba(255, 255, 255, 0.06);
+
+  transform: translateZ(0);
+
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.tunerSweetSpot.tuned {
+  background:
+    rgba(34, 211, 238, 0.16);
+
+  box-shadow:
+    0 0 20px
+    rgba(34, 211, 238, 0.12);
+}
+
+
+/* =========================================
+   CURSORE
+   ========================================= */
+
+.tunerCursor {
+  position: absolute;
+
+  top: 11px;
+
+  width: 20px;
+  height: 20px;
+
+  border-radius: 50%;
+
+  background: var(--yellow);
+
+  transform:
+    translateX(-50%);
+
+  box-shadow:
+    0 0 0 4px
+      rgba(255, 209, 102, 0.08),
+    0 0 20px
+      rgba(255, 209, 102, 0.38);
+
+  transition:
+    left 0.16s ease-out,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.tunerCursor.tuned {
+  left: 50% !important;
+
+  background: var(--cyan);
+
+  box-shadow:
+    0 0 0 5px
+      rgba(34, 211, 238, 0.10),
+    0 0 26px
+      rgba(34, 211, 238, 0.5);
+}
+
+
+/* =========================================
+   STATO
+   ========================================= */
+
+.tunerStatus {
+  min-height: 24px;
+
+  margin-top: 7px;
+
+  color: var(--yellow);
+
+  font-size: 15px;
+  font-weight: 900;
+
+  letter-spacing: 0.08em;
+
+  transition:
+    color 0.2s ease;
+}
+
+.tunerStatus.tuned {
+  color: var(--cyan);
+}
+
+
+/* =========================================
+   DATI TECNICI
+   ========================================= */
+
+.tunerReading {
+  min-height: 17px;
+
+  margin-top: 6px;
+
+  color: var(--secondary);
+
+  font-size: 10px;
+
+  font-variant-numeric:
+    tabular-nums;
+
+  letter-spacing: 0.04em;
+}
+
+
+/* =========================================
+   SELETTORE 6 CORDE
+   ========================================= */
+
+.tunerStrings {
+  display: grid;
+
+  grid-template-columns:
+    repeat(6, 1fr);
+
+  gap: 8px;
+
+  margin-top: 34px;
+}
+
+.tunerString {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  gap: 7px;
+}
+
+.tunerStringCircle {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 42px;
+  height: 42px;
+
+  border: 1px solid #56606c;
+
+  border-radius: 50%;
+
+  color: var(--secondary);
+
+  background:
+    rgba(255, 255, 255, 0.015);
+
+  font-size: 13px;
+  font-weight: 800;
+
+  transition:
+    border-color 0.18s ease,
+    color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.tunerStringNumber {
+  color: var(--muted);
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+
+/* corda attiva */
+
+.tunerString.active
+.tunerStringCircle {
+  border-color: var(--yellow);
+
+  color: var(--yellow);
+
+  background:
+    rgba(255, 209, 102, 0.06);
+
+  box-shadow:
+    0 0 16px
+    rgba(255, 209, 102, 0.13);
+}
+
+.tunerString.active
+.tunerStringNumber {
+  color: var(--yellow);
+}
+
+
+/* corda accordata */
+
+.tunerString.tuned
+.tunerStringCircle {
+  border-color: var(--cyan);
+
+  color: var(--cyan);
+
+  background:
+    rgba(34, 211, 238, 0.06);
+
+  box-shadow:
+    0 0 18px
+    rgba(34, 211, 238, 0.15);
+}
+
+.tunerString.tuned
+.tunerStringNumber {
+  color: var(--cyan);
+}
+
+
+/* =========================================
+   MICROFONO
+   ========================================= */
+
+.tunerMic {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 12px;
+
+  margin-top: 28px;
+}
+
+.tunerMicLabel {
+  color: var(--muted);
+
+  font-size: 8px;
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+}
+
+
+/* barre livello */
+
+.tunerMicBars {
+  display: flex;
+
+  align-items: center;
+
+  gap: 3px;
+
+  height: 15px;
+}
+
+.tunerMicBar {
+  width: 4px;
+  height: 11px;
+
+  border-radius: 4px;
+
+  background: #39404a;
+
+  transition:
+    background 0.08s linear,
+    opacity 0.08s linear;
+}
+
+.tunerMicBar.active {
+  background: var(--yellow);
+}
+
+.tunerMic.tuned
+.tunerMicBar.active {
+  background: var(--cyan);
+}
+
+
+/* =========================================
+   CONTROLLI
+   ========================================= */
+
+.tunerControls {
+  margin-top: 28px;
+}
+
+.tunerStartButton,
+.tunerStopButton {
+  width: 100%;
+
+  min-height: 54px;
+
+  border-radius: 13px;
+
+  font-size: 11px;
+  font-weight: 900;
+
+  letter-spacing: 0.08em;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease;
+}
+
+.tunerStartButton {
+  border: 1px solid
+    rgba(255, 209, 102, 0.8);
+
+  background: var(--yellow);
+
+  color: #16130b;
+
+  box-shadow:
+    0 8px 30px
+    rgba(255, 209, 102, 0.13);
+}
+
+.tunerStopButton {
+  border: 1px solid var(--border);
+
+  background:
+    linear-gradient(
+      180deg,
+      #1c2128,
+      #171b20
+    );
+
+  color: var(--text);
+}
+
+.tunerStartButton:active,
+.tunerStopButton:active {
+  transform: scale(0.985);
+}
+
+
+/* =========================================
+   IDLE
+   ========================================= */
+
+.tunerIdleText {
+  margin-top: 18px;
+
+  color: var(--secondary);
+
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: 0.1em;
+}
+
+
+/* =========================================
+   ERRORE
+   ========================================= */
+
+.tunerError {
+  margin-top: 16px;
+
+  padding: 12px 14px;
+
+  border:
+    1px solid
+    rgba(251, 113, 133, 0.3);
+
+  border-radius: 12px;
+
+  background:
+    rgba(251, 113, 133, 0.05);
+
+  color: var(--coral);
+
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+
+/* =========================================
+   DESKTOP
+   ========================================= */
+
+@media (min-width: 700px) {
+
+  .tunerScreen {
+    max-width: 620px;
+  }
+
+  .tunerMain {
+    margin-top: 42px;
+  }
+
+  .tunerStrings {
+    gap: 14px;
+
+    margin-top: 40px;
+  }
+
+  .tunerStringCircle {
+    width: 48px;
+    height: 48px;
+
+    font-size: 14px;
+  }
+
+  .tunerStatus {
+    font-size: 16px;
+  }
+
+}
+
+
+/* =========================================
+   MOBILE PICCOLO
+   ========================================= */
+
+@media (max-width: 400px) {
+
+  .tunerScreen
+  .trainingHero p {
+    font-size: 10px;
+  }
+
+  .tunerMain {
+    margin-top: 28px;
+  }
+
+  .tunerNote {
+    min-height: 92px;
+
+    font-size: 70px;
+  }
+
+  .tunerMeter {
+    margin-top: 28px;
+  }
+
+  .tunerStrings {
+    gap: 4px;
+
+    margin-top: 28px;
+  }
+
+  .tunerStringCircle {
+    width: 37px;
+    height: 37px;
+
+    font-size: 11px;
+  }
+
+  .tunerStringNumber {
+    font-size: 8px;
+  }
+
+  .tunerMic {
+    margin-top: 24px;
+  }
+
+}
