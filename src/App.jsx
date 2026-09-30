@@ -6,6 +6,7 @@ import Training from "./screens/Training";
 import Scales from "./screens/Scales";
 import Chords from "./screens/Chords";
 import Tuner from "./screens/Tuner";
+import Staff from "./screens/Staff";
 
 const previewNotes = [
   { id: 1, fret: 1, string: 2, type: "note" },
@@ -272,6 +273,16 @@ function Home({
             }
           />
 
+          {/* PENTAGRAMMA */}
+
+          <StudyCard
+            symbol="𝄞"
+            title="PENTAGRAMMA"
+            text="Dal pentagramma al manico"
+            onClick={() =>
+              setScreen("staff")
+           }
+          />
 
           {/* SCALE */}
 
@@ -427,6 +438,16 @@ function App() {
         />
       )}
 
+       {/* PENTAGRAMMA */}
+
+      {screen === "staff" && (
+       <Staff
+        notation={notation}
+        goHome={() =>
+         setScreen("home")
+       }
+      />
+      )}
 
       {/* SCALE */}
 

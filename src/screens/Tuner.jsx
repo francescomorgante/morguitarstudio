@@ -1,4 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  calculateRms,
+  detectPitchYIN,
+} from "../audio/pitchDetector";
 
 
 /* =========================================
@@ -52,17 +61,22 @@ const STRINGS = [
 
 
 /* =========================================
-   PARAMETRI STABILIZZAZIONE
+   PARAMETRI V5
    ========================================= */
 
+const HISTORY_SIZE = 9;
+
+const MIN_HISTORY = 4;
+
+const STRING_CONFIRM_FRAMES = 3;
+
 const ENTER_TUNE_CENTS = 4;
+
 const EXIT_TUNE_CENTS = 7;
 
-const TUNE_HOLD_MS = 450;
+const TUNE_HOLD_MS = 400;
 
-const STRING_LOCK_MS = 900;
-
-const HISTORY_SIZE = 12;
+const LOST_SIGNAL_MS = 300;
 
 
 /* =========================================
@@ -88,14 +102,14 @@ function findClosestString(
   let closest =
     STRINGS[0];
 
-  let smallestDifference =
+  let difference =
     Infinity;
 
 
   for (
     const string of STRINGS
   ) {
-    const difference =
+    const cents =
       Math.abs(
         centsBetween(
           frequency,
@@ -105,11 +119,10 @@ function findClosestString(
 
 
     if (
-      difference <
-      smallestDifference
+      cents < difference
     ) {
-      smallestDifference =
-        difference;
+      difference =
+        cents;
 
       closest =
         string;
@@ -121,10 +134,6 @@ function findClosestString(
 }
 
 
-/* =========================================
-   MEDIANA
-   ========================================= */
-
 function median(values) {
   if (!values.length) {
     return null;
@@ -133,8 +142,7 @@ function median(values) {
 
   const sorted =
     [...values].sort(
-      (a, b) =>
-        a - b
+      (a, b) => a - b
     );
 
 
@@ -145,370 +153,21 @@ function median(values) {
 
 
   if (
-    sorted.length % 2 ===
-    0
+    sorted.length % 2
   ) {
-    return (
-      sorted[middle - 1] +
-      sorted[middle]
-    ) / 2;
-  }
-
-
-  return sorted[middle];
-}
-
-
-/* =========================================
-   FREQUENZA STABILIZZATA
-   ========================================= */
-
-function stableFrequency(
-  values
-) {
-  if (!values.length) {
-    return null;
-  }
-
-
-  const center =
-    median(values);
-
-
-  /*
-    Eliminiamo letture che
-    differiscono troppo dalla
-    mediana.
-  */
-
-  const filtered =
-    values.filter(
-      (value) => {
-
-        const distance =
-          Math.abs(
-            centsBetween(
-              value,
-              center
-            )
-          );
-
-
-        return (
-          distance < 18
-        );
-      }
-    );
-
-
-  if (
-    !filtered.length
-  ) {
-    return center;
+    return sorted[middle];
   }
 
 
   return (
-    filtered.reduce(
-      (sum, value) =>
-        sum + value,
-      0
-    ) /
-    filtered.length
-  );
+    sorted[middle - 1] +
+    sorted[middle]
+  ) / 2;
 }
 
 
 /* =========================================
-   RILEVATORE PITCH
-   ========================================= */
-
-function detectPitch(
-  buffer,
-  sampleRate
-) {
-  const size =
-    buffer.length;
-
-
-  /*
-    Calcolo livello RMS.
-  */
-
-  let sumSquares = 0;
-
-
-  for (
-    let i = 0;
-    i < size;
-    i++
-  ) {
-    sumSquares +=
-      buffer[i] *
-      buffer[i];
-  }
-
-
-  const rms =
-    Math.sqrt(
-      sumSquares /
-      size
-    );
-
-
-  /*
-    Rumore troppo debole:
-    non analizziamo.
-  */
-
-  if (
-    rms < 0.006
-  ) {
-    return {
-      frequency: null,
-      level: rms,
-    };
-  }
-
-
-  /*
-    Range utile della
-    chitarra standard.
-  */
-
-  const minFrequency =
-    70;
-
-  const maxFrequency =
-    350;
-
-
-  const minLag =
-    Math.floor(
-      sampleRate /
-      maxFrequency
-    );
-
-
-  const maxLag =
-    Math.min(
-      Math.floor(
-        sampleRate /
-        minFrequency
-      ),
-
-      Math.floor(
-        size / 2
-      )
-    );
-
-
-  let bestLag = -1;
-
-  let bestDifference =
-    Infinity;
-
-
-  /*
-    Confronto tra segnale
-    e copie ritardate.
-  */
-
-  for (
-    let lag = minLag;
-    lag <= maxLag;
-    lag++
-  ) {
-
-    let difference = 0;
-
-
-    for (
-      let i = 0;
-      i < size - lag;
-      i++
-    ) {
-
-      difference +=
-        Math.abs(
-          buffer[i] -
-          buffer[i + lag]
-        );
-
-    }
-
-
-    difference /=
-      size - lag;
-
-
-    if (
-      difference <
-      bestDifference
-    ) {
-
-      bestDifference =
-        difference;
-
-      bestLag =
-        lag;
-
-    }
-
-  }
-
-
-  if (
-    bestLag <= 0
-  ) {
-
-    return {
-      frequency: null,
-      level: rms,
-    };
-
-  }
-
-
-  /*
-    Funzione locale per
-    interpolazione.
-  */
-
-  function differenceAt(
-    lag
-  ) {
-
-    if (
-      lag < minLag ||
-      lag > maxLag
-    ) {
-      return null;
-    }
-
-
-    let difference = 0;
-
-
-    for (
-      let i = 0;
-      i < size - lag;
-      i++
-    ) {
-
-      difference +=
-        Math.abs(
-          buffer[i] -
-          buffer[i + lag]
-        );
-
-    }
-
-
-    return (
-      difference /
-      (size - lag)
-    );
-
-  }
-
-
-  let refinedLag =
-    bestLag;
-
-
-  const left =
-    differenceAt(
-      bestLag - 1
-    );
-
-  const center =
-    differenceAt(
-      bestLag
-    );
-
-  const right =
-    differenceAt(
-      bestLag + 1
-    );
-
-
-  /*
-    Interpolazione
-    parabolica.
-  */
-
-  if (
-    left !== null &&
-    right !== null
-  ) {
-
-    const denominator =
-      left -
-      2 * center +
-      right;
-
-
-    if (
-      Math.abs(
-        denominator
-      ) > 0.000001
-    ) {
-
-      const correction =
-        0.5 *
-        (left - right) /
-        denominator;
-
-
-      if (
-        Math.abs(
-          correction
-        ) <= 1
-      ) {
-
-        refinedLag +=
-          correction;
-
-      }
-
-    }
-
-  }
-
-
-  const frequency =
-    sampleRate /
-    refinedLag;
-
-
-  if (
-    !Number.isFinite(
-      frequency
-    ) ||
-    frequency <
-      minFrequency ||
-    frequency >
-      maxFrequency
-  ) {
-
-    return {
-      frequency: null,
-      level: rms,
-    };
-
-  }
-
-
-  return {
-    frequency,
-    level: rms,
-  };
-}
-
-
-/* =========================================
-   COMPONENTE TUNER
+   COMPONENTE
    ========================================= */
 
 function Tuner({
@@ -537,21 +196,12 @@ function Tuner({
     useState(null);
 
 
-  /*
-    Valore tecnico filtrato.
-  */
-
   const [
     cents,
     setCents,
   ] =
     useState(0);
 
-
-  /*
-    Valore separato
-    per il cursore.
-  */
 
   const [
     displayCents,
@@ -581,8 +231,19 @@ function Tuner({
     useState("");
 
 
+  /*
+    Diagnostica temporanea.
+  */
+
+  const [
+    confidence,
+    setConfidence,
+  ] =
+    useState(0);
+
+
   /* =========================================
-     REFS AUDIO
+     AUDIO REFS
      ========================================= */
 
   const audioContextRef =
@@ -599,27 +260,94 @@ function Tuner({
 
 
   /* =========================================
-     REFS STABILIZZAZIONE
+     FILTER REFS
      ========================================= */
 
   const historyRef =
     useRef([]);
 
+
   const lockedStringRef =
     useRef(null);
 
-  const lastStringSeenRef =
+
+  const candidateStringRef =
+    useRef(null);
+
+
+  const candidateFramesRef =
     useRef(0);
+
 
   const tuneStartRef =
     useRef(null);
+
 
   const tunedRef =
     useRef(false);
 
 
+  const lastGoodPitchRef =
+    useRef(0);
+
+
+  /*
+    Noise floor.
+
+    Serve soltanto per il meter MIC.
+    Non decide da solo quale nota
+    visualizzare.
+  */
+
+  const noiseFloorRef =
+    useRef(0.005);
+
+
   /* =========================================
-     AVVIA ACCORDATORE
+     RESET
+     ========================================= */
+
+  function resetDetection() {
+
+    historyRef.current =
+      [];
+
+    lockedStringRef.current =
+      null;
+
+    candidateStringRef.current =
+      null;
+
+    candidateFramesRef.current =
+      0;
+
+    tuneStartRef.current =
+      null;
+
+    tunedRef.current =
+      false;
+
+    lastGoodPitchRef.current =
+      0;
+
+
+    setFrequency(null);
+
+    setCurrentString(null);
+
+    setCents(0);
+
+    setDisplayCents(0);
+
+    setIsTuned(false);
+
+    setConfidence(0);
+
+  }
+
+
+  /* =========================================
+     START
      ========================================= */
 
   async function startTuner() {
@@ -636,7 +364,7 @@ function Tuner({
       ) {
 
         setError(
-          "Il browser non supporta l'accesso al microfono."
+          "Il browser non supporta il microfono."
         );
 
         return;
@@ -674,17 +402,6 @@ function Tuner({
         window.webkitAudioContext;
 
 
-      if (!AudioContext) {
-
-        setError(
-          "Web Audio non è supportato da questo browser."
-        );
-
-        return;
-
-      }
-
-
       const audioContext =
         new AudioContext();
 
@@ -697,9 +414,7 @@ function Tuner({
         audioContext.state ===
         "suspended"
       ) {
-
         await audioContext.resume();
-
       }
 
 
@@ -707,12 +422,6 @@ function Tuner({
         audioContext
           .createAnalyser();
 
-
-      /*
-        Buffer ampio per
-        migliorare soprattutto
-        il MI basso.
-      */
 
       analyser.fftSize =
         8192;
@@ -739,34 +448,14 @@ function Tuner({
       );
 
 
-      /*
-        Reset stato.
-      */
-
-      historyRef.current =
-        [];
-
-      lockedStringRef.current =
-        null;
-
-      tuneStartRef.current =
-        null;
-
-      tunedRef.current =
-        false;
+      resetDetection();
 
 
-      setFrequency(null);
+      noiseFloorRef.current =
+        0.005;
 
-      setCurrentString(null);
-
-      setCents(0);
-
-      setDisplayCents(0);
 
       setMicLevel(0);
-
-      setIsTuned(false);
 
       setListening(true);
 
@@ -790,7 +479,7 @@ function Tuner({
 
 
   /* =========================================
-     ANALISI CONTINUA
+     ANALYSIS
      ========================================= */
 
   function startAnalysis() {
@@ -807,9 +496,7 @@ function Tuner({
       !analyser ||
       !audioContext
     ) {
-
       return;
-
     }
 
 
@@ -827,400 +514,490 @@ function Tuner({
         );
 
 
-      const result =
-        detectPitch(
-          buffer,
-          audioContext
-            .sampleRate
+      const now =
+        performance.now();
+
+
+      /*
+        RMS puro.
+      */
+
+      const rms =
+        calculateRms(
+          buffer
         );
 
 
       /*
-        Livello microfono
-        normalizzato 0–100.
+        Aggiorniamo lentamente
+        il noise floor quando il
+        segnale è relativamente basso.
       */
 
-      const visualLevel =
-        Math.min(
-          100,
-          result.level * 500
+      if (
+        rms <
+        noiseFloorRef.current *
+          1.5
+      ) {
+
+        noiseFloorRef.current =
+          noiseFloorRef.current *
+            0.98 +
+          rms *
+            0.02;
+
+      }
+
+
+      /*
+        Meter MIC.
+
+        Sottraiamo il fondo.
+      */
+
+      const usefulLevel =
+        Math.max(
+          0,
+          rms -
+          noiseFloorRef.current
         );
 
 
       setMicLevel(
-        visualLevel
+        Math.min(
+          100,
+          usefulLevel * 600
+        )
       );
 
 
+      /*
+        Gate RMS.
+
+        Non è una soglia microscopica:
+        deve esserci un segnale
+        significativamente superiore
+        al rumore.
+      */
+
+      const rmsGate =
+        Math.max(
+          0.012,
+          noiseFloorRef.current *
+            1.8
+        );
+
+
+      const result =
+        detectPitchYIN(
+          buffer,
+          audioContext.sampleRate,
+          {
+            minFrequency: 70,
+            maxFrequency: 350,
+
+            /*
+              YIN threshold.
+            */
+
+            threshold: 0.12,
+
+            /*
+              Primo gate.
+            */
+
+            minRms: rmsGate,
+          }
+        );
+
+
+      setConfidence(
+        result.probability
+      );
+
+
+      /* =================================
+         NESSUN PITCH AFFIDABILE
+         ================================= */
+
       if (
-        result.frequency
+        !result.frequency
       ) {
 
-        const now =
-          performance.now();
-
-
-        const detectedString =
-          findClosestString(
-            result.frequency
-          );
-
-
-        /* =================================
-           LOCK CORDA
-           ================================= */
+        /*
+          Se abbiamo perso il segnale
+          per un po', smettiamo di
+          muovere l'interfaccia.
+        */
 
         if (
-          !lockedStringRef
-            .current
+          lastGoodPitchRef.current &&
+          now -
+            lastGoodPitchRef.current >
+            LOST_SIGNAL_MS
+        ) {
+
+          historyRef.current =
+            [];
+
+          candidateStringRef.current =
+            null;
+
+          candidateFramesRef.current =
+            0;
+
+          tuneStartRef.current =
+            null;
+
+        }
+
+
+        animationRef.current =
+          requestAnimationFrame(
+            update
+          );
+
+        return;
+
+      }
+
+
+      lastGoodPitchRef.current =
+        now;
+
+
+      const detectedString =
+        findClosestString(
+          result.frequency
+        );
+
+
+      /* =================================
+         CONFERMA CORDA
+         ================================= */
+
+      if (
+        !lockedStringRef.current ||
+        detectedString.number !==
+          lockedStringRef.current.number
+      ) {
+
+        if (
+          candidateStringRef
+            .current?.number ===
+          detectedString.number
+        ) {
+
+          candidateFramesRef.current +=
+            1;
+
+        }
+
+        else {
+
+          candidateStringRef.current =
+            detectedString;
+
+          candidateFramesRef.current =
+            1;
+
+        }
+
+
+        /*
+          Non cambiamo corda con
+          una singola rilevazione.
+        */
+
+        if (
+          candidateFramesRef.current >=
+          STRING_CONFIRM_FRAMES
         ) {
 
           lockedStringRef.current =
             detectedString;
 
 
-          lastStringSeenRef.current =
-            now;
+          candidateStringRef.current =
+            null;
+
+
+          candidateFramesRef.current =
+            0;
 
 
           historyRef.current =
             [];
 
+
+          tuneStartRef.current =
+            null;
+
+
+          tunedRef.current =
+            false;
+
+
+          setIsTuned(false);
+
+
+          setCurrentString(
+            detectedString
+          );
+
+
+          setFrequency(null);
+
+          setCents(0);
+
+          setDisplayCents(0);
+
         }
 
 
-        const locked =
-          lockedStringRef.current;
-
-
-        const distanceFromLocked =
-          Math.abs(
-            centsBetween(
-              result.frequency,
-              locked.frequency
-            )
+        animationRef.current =
+          requestAnimationFrame(
+            update
           );
 
+        return;
 
-        /*
-          La frequenza appartiene
-          ancora plausibilmente
-          alla corda bloccata.
-        */
-
-        if (
-          distanceFromLocked <=
-          100
-        ) {
-
-          lastStringSeenRef.current =
-            now;
+      }
 
 
-          historyRef.current.push(
-            result.frequency
+      /*
+        Stessa corda:
+        reset candidato.
+      */
+
+      candidateStringRef.current =
+        null;
+
+
+      candidateFramesRef.current =
+        0;
+
+
+      const locked =
+        lockedStringRef.current;
+
+
+      const rawCents =
+        centsBetween(
+          result.frequency,
+          locked.frequency
+        );
+
+
+      /*
+        Se siamo troppo lontani dalla
+        corda attesa, ignoriamo il frame.
+      */
+
+      if (
+        Math.abs(rawCents) > 80
+      ) {
+
+        animationRef.current =
+          requestAnimationFrame(
+            update
           );
 
+        return;
+
+      }
+
+
+      /* =================================
+         HISTORY
+         ================================= */
+
+      historyRef.current.push(
+        result.frequency
+      );
+
+
+      if (
+        historyRef.current.length >
+        HISTORY_SIZE
+      ) {
+
+        historyRef.current.shift();
+
+      }
+
+
+      if (
+        historyRef.current.length <
+        MIN_HISTORY
+      ) {
+
+        animationRef.current =
+          requestAnimationFrame(
+            update
+          );
+
+        return;
+
+      }
+
+
+      const stableFrequency =
+        median(
+          historyRef.current
+        );
+
+
+      const stableCents =
+        centsBetween(
+          stableFrequency,
+          locked.frequency
+        );
+
+
+      /* =================================
+         FREQUENZA
+         ================================= */
+
+      setFrequency(
+        (previous) => {
 
           if (
-            historyRef.current
-              .length >
-            HISTORY_SIZE
+            previous === null
           ) {
-
-            historyRef.current
-              .shift();
-
+            return stableFrequency;
           }
 
 
-          const stable =
-            stableFrequency(
-              historyRef.current
-            );
-
-
-          if (stable) {
-
-            const stableCents =
-              centsBetween(
-                stable,
-                locked.frequency
-              );
-
-
-            /* =============================
-               FREQUENZA VISUALIZZATA
-               ============================= */
-
-            setFrequency(
-              (previous) => {
-
-                if (
-                  previous ===
-                  null
-                ) {
-
-                  return stable;
-
-                }
-
-
-                return (
-                  previous *
-                    0.82 +
-                  stable *
-                    0.18
-                );
-
-              }
-            );
-
-
-            setCurrentString(
-              locked
-            );
-
-
-            /* =============================
-               CENT TECNICI
-               ============================= */
-
-            setCents(
-              (previous) =>
-                previous *
-                  0.82 +
-                stableCents *
-                  0.18
-            );
-
-
-            /* =============================
-               CURSORE STABILIZZATO
-               ============================= */
-
-            setDisplayCents(
-              (previous) => {
-
-                /*
-                  Quando la corda è
-                  accordata il cursore
-                  viene attratto
-                  verso il centro.
-                */
-
-                if (
-                  tunedRef.current
-                ) {
-
-                  return (
-                    previous *
-                    0.72
-                  );
-
-                }
-
-
-                const distance =
-                  Math.abs(
-                    stableCents
-                  );
-
-
-                let response;
-
-
-                /*
-                  Molto vicino
-                  alla frequenza.
-                */
-
-                if (
-                  distance <= 7
-                ) {
-
-                  response =
-                    0.08;
-
-                }
-
-
-                /*
-                  Zona intermedia.
-                */
-
-                else if (
-                  distance <= 15
-                ) {
-
-                  response =
-                    0.14;
-
-                }
-
-
-                /*
-                  Lontano:
-                  risposta più rapida.
-                */
-
-                else {
-
-                  response =
-                    0.28;
-
-                }
-
-
-                return (
-                  previous *
-                    (1 - response) +
-                  stableCents *
-                    response
-                );
-
-              }
-            );
-
-
-            /* =============================
-               CONFERMA ACCORDATURA
-               ============================= */
-
-            const absCents =
-              Math.abs(
-                stableCents
-              );
-
-
-            /*
-              Non ancora accordata.
-            */
-
-            if (
-              !tunedRef.current
-            ) {
-
-              if (
-                absCents <=
-                ENTER_TUNE_CENTS
-              ) {
-
-                if (
-                  tuneStartRef
-                    .current ===
-                  null
-                ) {
-
-                  tuneStartRef.current =
-                    now;
-
-                }
-
-
-                /*
-                  Deve restare nella
-                  zona corretta per
-                  almeno 450 ms.
-                */
-
-                if (
-                  now -
-                    tuneStartRef
-                      .current >=
-                  TUNE_HOLD_MS
-                ) {
-
-                  tunedRef.current =
-                    true;
-
-
-                  setIsTuned(
-                    true
-                  );
-
-                }
-
-              }
-
-              else {
-
-                tuneStartRef.current =
-                  null;
-
-              }
-
-            }
-
-
-            /*
-              Già accordata.
-              Isteresi ±7 cent.
-            */
-
-            else {
-
-              if (
-                absCents >
-                EXIT_TUNE_CENTS
-              ) {
-
-                tunedRef.current =
-                  false;
-
-
-                tuneStartRef.current =
-                  null;
-
-
-                setIsTuned(
-                  false
-                );
-
-              }
-
-            }
-
-          }
+          return (
+            previous * 0.85 +
+            stableFrequency * 0.15
+          );
 
         }
+      );
 
 
-        /* =================================
-           POSSIBILE CAMBIO CORDA
-           ================================= */
+      /* =================================
+         CENT
+         ================================= */
 
-        else {
+      setCents(
+        (previous) =>
+          previous * 0.82 +
+          stableCents * 0.18
+      );
+
+
+      /* =================================
+         CURSORE
+         ================================= */
+
+      let cursorTarget =
+        stableCents;
+
+
+      /*
+        Dead zone.
+      */
+
+      if (
+        Math.abs(
+          cursorTarget
+        ) < 1.5
+      ) {
+
+        cursorTarget = 0;
+
+      }
+
+
+      setDisplayCents(
+        (previous) => {
+
+          if (
+            tunedRef.current
+          ) {
+            return 0;
+          }
+
+
+          const difference =
+            Math.abs(
+              cursorTarget -
+              previous
+            );
+
+
+          /*
+            Movimento piccolo:
+            filtraggio molto forte.
+
+            Movimento grande:
+            risposta più veloce.
+          */
+
+          const factor =
+            difference > 10
+              ? 0.24
+              : difference > 4
+                ? 0.14
+                : 0.07;
+
+
+          return (
+            previous *
+              (1 - factor) +
+            cursorTarget *
+              factor
+          );
+
+        }
+      );
+
+
+      /* =================================
+         ACCORDATA
+         ================================= */
+
+      const absCents =
+        Math.abs(
+          stableCents
+        );
+
+
+      if (
+        !tunedRef.current
+      ) {
+
+        if (
+          absCents <=
+          ENTER_TUNE_CENTS
+        ) {
+
+          if (
+            tuneStartRef.current ===
+            null
+          ) {
+
+            tuneStartRef.current =
+              now;
+
+          }
+
 
           if (
             now -
-              lastStringSeenRef
-                .current >
-            STRING_LOCK_MS
+              tuneStartRef.current >=
+            TUNE_HOLD_MS
           ) {
 
-            lockedStringRef.current =
-              detectedString;
-
-
-            lastStringSeenRef.current =
-              now;
-
-
-            historyRef.current =
-              [];
-
-
-            tuneStartRef.current =
-              null;
-
-
             tunedRef.current =
-              false;
+              true;
 
 
             setIsTuned(
-              false
+              true
             );
 
 
@@ -1229,6 +1006,36 @@ function Tuner({
             );
 
           }
+
+        }
+
+        else {
+
+          tuneStartRef.current =
+            null;
+
+        }
+
+      }
+
+      else {
+
+        if (
+          absCents >
+          EXIT_TUNE_CENTS
+        ) {
+
+          tunedRef.current =
+            false;
+
+
+          tuneStartRef.current =
+            null;
+
+
+          setIsTuned(
+            false
+          );
 
         }
 
@@ -1249,7 +1056,7 @@ function Tuner({
 
 
   /* =========================================
-     FERMA ACCORDATORE
+     STOP
      ========================================= */
 
   function stopTuner() {
@@ -1299,32 +1106,12 @@ function Tuner({
       null;
 
 
-    historyRef.current =
-      [];
-
-    lockedStringRef.current =
-      null;
-
-    tuneStartRef.current =
-      null;
-
-    tunedRef.current =
-      false;
+    resetDetection();
 
 
     setListening(false);
 
-    setFrequency(null);
-
-    setCurrentString(null);
-
-    setCents(0);
-
-    setDisplayCents(0);
-
     setMicLevel(0);
-
-    setIsTuned(false);
 
   }
 
@@ -1377,7 +1164,7 @@ function Tuner({
 
 
   /* =========================================
-     STATO TESTUALE
+     STATUS
      ========================================= */
 
   let status = "";
@@ -1412,7 +1199,7 @@ function Tuner({
 
 
   /* =========================================
-     POSIZIONE CURSORE
+     CURSOR
      ========================================= */
 
   const visualCents =
@@ -1435,7 +1222,7 @@ function Tuner({
 
 
   /* =========================================
-     LIVELLO MICROFONO A BARRE
+     MIC
      ========================================= */
 
   const micBars =
@@ -1464,10 +1251,6 @@ function Tuner({
     <section className="tunerScreen">
 
 
-      {/* =====================================
-          TOP BAR
-          ===================================== */}
-
       <div className="trainingTopbar">
 
         <button
@@ -1484,10 +1267,6 @@ function Tuner({
 
       </div>
 
-
-      {/* =====================================
-          HERO
-          ===================================== */}
 
       <div className="trainingHero">
 
@@ -1510,10 +1289,6 @@ function Tuner({
       </div>
 
 
-      {/* =====================================
-          AREA ACCORDATORE
-          ===================================== */}
-
       <div className="tunerMain">
 
 
@@ -1535,19 +1310,16 @@ function Tuner({
 
           {currentString
             ? (
-              notation ===
-              "italian"
-                ? currentString
-                    .italian
-                : currentString
-                    .english
+              notation === "italian"
+                ? currentString.italian
+                : currentString.english
             )
             : "—"}
 
         </div>
 
 
-        {/* CORDA RICONOSCIUTA */}
+        {/* CORDA */}
 
         <div className="tunerDetectedString">
 
@@ -1570,87 +1342,32 @@ function Tuner({
         </div>
 
 
-        {/* =================================
-            MISURATORE
-            ================================= */}
+        {/* METER */}
 
         <div className="tunerMeter">
 
 
-          {/* LABEL */}
-
           <div className="tunerMeterLabels">
 
-            <span>
-              −50
-            </span>
-
-            <span>
-              −25
-            </span>
-
-            <span>
-              0
-            </span>
-
-            <span>
-              +25
-            </span>
-
-            <span>
-              +50
-            </span>
+            <span>−50</span>
+            <span>−25</span>
+            <span>0</span>
+            <span>+25</span>
+            <span>+50</span>
 
           </div>
 
 
-          {/* TRACK */}
-
           <div className="tunerTrack">
-
 
             <div className="tunerTrackLine" />
 
+            <span className="tunerTick tickMinus50" />
+            <span className="tunerTick tickMinus25" />
+            <span className="tunerTick tickZero" />
+            <span className="tunerTick tickPlus25" />
+            <span className="tunerTick tickPlus50" />
 
-            {/* TACCHE */}
-
-            <span
-              className="
-                tunerTick
-                tickMinus50
-              "
-            />
-
-            <span
-              className="
-                tunerTick
-                tickMinus25
-              "
-            />
-
-            <span
-              className="
-                tunerTick
-                tickZero
-              "
-            />
-
-            <span
-              className="
-                tunerTick
-                tickPlus25
-              "
-            />
-
-            <span
-              className="
-                tunerTick
-                tickPlus50
-              "
-            />
-
-
-            {/* ZONA CENTRALE */}
 
             <div
               className={
@@ -1662,8 +1379,6 @@ function Tuner({
               }
             />
 
-
-            {/* CURSORE */}
 
             {currentString && (
 
@@ -1687,8 +1402,6 @@ function Tuner({
           </div>
 
 
-          {/* STATO */}
-
           <div
             className={
               `tunerStatus ${
@@ -1705,8 +1418,6 @@ function Tuner({
 
           </div>
 
-
-          {/* DATI */}
 
           <div className="tunerReading">
 
@@ -1734,9 +1445,7 @@ function Tuner({
         </div>
 
 
-        {/* =================================
-            SEI CORDE
-            ================================= */}
+        {/* CORDE */}
 
         <div className="tunerStrings">
 
@@ -1800,9 +1509,7 @@ function Tuner({
         </div>
 
 
-        {/* =================================
-            MICROFONO
-            ================================= */}
+        {/* MIC */}
 
         {listening && (
 
@@ -1854,9 +1561,35 @@ function Tuner({
         )}
 
 
-        {/* =================================
-            CONTROLLI
-            ================================= */}
+        {/* DIAGNOSTICA V5 */}
+
+        {listening && (
+
+          <div
+            style={{
+              marginTop: "10px",
+              textAlign: "center",
+              color: "#9299a3",
+              fontSize: "9px",
+              fontWeight: "700",
+              letterSpacing: ".05em",
+            }}
+          >
+
+            YIN CONFIDENCE{" "}
+
+            {Math.round(
+              confidence * 100
+            )}
+
+            %
+
+          </div>
+
+        )}
+
+
+        {/* CONTROLLI */}
 
         <div className="tunerControls">
 
@@ -1884,10 +1617,6 @@ function Tuner({
 
         </div>
 
-
-        {/* =================================
-            ERRORE
-            ================================= */}
 
         {error && (
 

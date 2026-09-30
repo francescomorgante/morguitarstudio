@@ -12,6 +12,19 @@ import {
   isInsideCagedScaleBox,
 } from "../music/theory";
 
+const TUNING_MIDI = [
+  64, // MI cantino E4
+  59, // SI B3
+  55, // SOL G3
+  50, // RE D3
+  45, // LA A2
+  40, // MI grave E2
+];
+
+function midiAt(stringIndex, fret) {
+  return TUNING_MIDI[stringIndex] + fret;
+}
+
 function Fretboard({
   range,
   noteNames,
@@ -19,6 +32,7 @@ function Fretboard({
   mode = "study",
 
   targetNote = null,
+  targetMidi = null,
 
   selected = [],
   verified = false,
@@ -195,7 +209,20 @@ function Fretboard({
 
       return "";
     }
+/* =====================
+   ALTEZZA REALE / MIDI
+   ===================== */
 
+if (mode === "pitch") {
+  const midi = midiAt(
+    stringIndex,
+    fret
+  );
+
+  return midi === targetMidi
+    ? "studyNote"
+    : "";
+}
     /* =====================
        NOTA SINGOLA
        ===================== */
@@ -487,6 +514,13 @@ if (
     }
 
     if (
+      mode === "pitch" &&
+      state === "studyNote"
+    ) {
+  return true;
+}
+
+    if (
       mode === "free" &&
       state === "freeNote"
     ) {
@@ -596,14 +630,20 @@ if (
                       <button
                         key={fret}
                         type="button"
-                        className={`fretPosition ${state}`}
+                        className={`fretPosition ${
+                        fret === 0 ? "openStringPosition" : ""
+                        } ${state}`}
                         onClick={() =>
                           onPositionClick?.(
                             stringIndex,
                             fret
                           )
                         }
-                        aria-label={`${noteNames[note]}, tasto ${fret}`}
+                        aria-label={
+                          fret === 0
+                          ? `${noteNames[note]}, corda a vuoto`
+                          : `${noteNames[note]}, tasto ${fret}`
+                        }
                       >
 
                         {/* MARKER SCALE */}
@@ -665,34 +705,32 @@ if (
 
           {/* NUMERI TASTI */}
 
-          <div className="fretNumbers">
+<div className="fretNumbers">
+  {frets.map((fret) => {
+    const showNumber =
+      fret === 12 ||
+      (fret >= 1 &&
+        fret <= 21 &&
+        fret % 2 !== 0);
 
-            {frets.map(
-              (fret) => (
-                <span
-                  key={fret}
-                  className={
-                    fret === 12
-                      ? "octaveFret"
-                      : ""
-                  }
-                >
-                  {[
-                    3,
-                    5,
-                    7,
-                    9,
-                    12,
-                    15,
-                    17,
-                  ].includes(fret)
-                    ? fret
-                    : ""}
-                </span>
-              )
-            )}
-
-          </div>
+    return (
+      <span
+        key={fret}
+        className={
+          fret === 12
+            ? "octaveFret"
+            : ""
+        }
+      >
+       {fret === 0
+  ? "VUOTA"
+  : showNumber
+    ? fret
+    : ""}
+      </span>
+    );
+  })}
+</div>
 
         </div>
       </div>

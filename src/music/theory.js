@@ -37,7 +37,9 @@ export const RANGES = [
   { label: "5–9", start: 5, end: 9 },
   { label: "8–12", start: 8, end: 12 },
   { label: "12–17", start: 12, end: 17 },
-  { label: "1–17", start: 1, end: 17 },
+
+  // MANICO COMPLETO
+  { label: "0–22", start: 0, end: 22 },
 ];
 
 
